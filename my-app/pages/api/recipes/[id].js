@@ -10,21 +10,9 @@ export default async function handler(req, res) {
   const { database } = await connectToDatabase();
   const recipes = database.collection('recipes');
 
-  if (req.method === 'GET') {
-    const list = await recipes.find({ userId: new ObjectId(decoded.userId) }).toArray();
-    return res.status(200).json(list);
-  }
-
-  if (req.method === 'POST') {
-    const { title, content, imageUrl } = req.body;
-    const doc = await recipes.insertOne({
-      userId: new ObjectId(decoded.userId),
-      title,
-      content,
-      imageUrl,
-      createdAt: new Date(),
-    });
-    return res.status(201).json(doc);
+  if (req.method === 'DELETE') {
+    await recipes.deleteOne({ _id: new ObjectId(req.query.id), userId: new ObjectId(decoded.userId) });
+    return res.status(204).end();
   }
 
   return res.status(405).end();
