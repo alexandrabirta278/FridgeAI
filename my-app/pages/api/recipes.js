@@ -1,4 +1,3 @@
-// pages/api/recipes.js
 import { connectToDatabase } from '@/lib/mongodb';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
