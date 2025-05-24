@@ -1,72 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 
-export default function RegisterPage() {
+export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetch('/api/me')
-      .then((res) => res.ok && router.push('/new'))
-      .catch(() => {});
-  }, []);
-
-  const validateEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleSubmit = async () => {
-    setError('');
-
-    if (!validateEmail(email)) {
-      return setError('Invalid email format');
-    }
-
-    if (password.length < 8) {
-      return setError('Password must be at least 8 characters');
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
-    const data = await res.json();
-    if (res.ok) router.push('/login');
-    else setError(data.message || 'Registration failed');
+    if (res.ok) {
+      router.push('/new');
+    } else {
+      const data = await res.json();
+      setError(data.message);
+    }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white text-black p-6">
-      <h1 className="text-2xl font-bold mb-4">Register</h1>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="mb-2 p-3 border rounded w-full max-w-xs"
-      />
-      <input
-        type="password"
-        placeholder="Password (min. 8 characters)"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="mb-4 p-3 border rounded w-full max-w-xs"
-      />
-      <button
-        onClick={handleSubmit}
-        className="bg-green-500 hover:bg-green-600 transition text-white font-semibold px-4 py-2 rounded w-full max-w-xs"
+    <div className="min-h-screen flex items-center justify-center bg-green-50">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md border border-green-200"
       >
-        Register
-      </button>
-      <p className="mt-3 text-sm">
-        Already have an account?{' '}
-        <Link href="/login" className="text-blue-600 underline">Login</Link>
-      </p>
-      {error && <p className="mt-2 text-red-500">{error}</p>}
+        <h1 className="text-3xl font-bold text-center text-green-600 mb-6">Register</h1>
+        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-4 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-6 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+        />
+        <button
+          type="submit"
+          className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded text-lg font-semibold"
+        >
+          Sign Up
+        </button>
+      </form>
     </div>
   );
 }
