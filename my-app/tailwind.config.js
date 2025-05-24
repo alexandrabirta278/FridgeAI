@@ -1,12 +1,15 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: 'class', // 🔥 activează comutatorul dark/light prin clasă
-    content: [
-      './pages/**/*.{js,ts,jsx,tsx}',
-      './components/**/*.{js,ts,jsx,tsx}',
-    ],
-    theme: {
-      extend: {},
+  content: ['./pages/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      fontFamily: {
+        inter: ['Inter', 'sans-serif'],
+      },
+      colors: {
+        primary: '#f43f5e',
+        secondary: '#fcd34d',
+      },
     },
-    plugins: [],
-  };
+  },
+  plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],
+}

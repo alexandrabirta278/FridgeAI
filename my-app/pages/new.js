@@ -1,100 +1,89 @@
-// /pages/new.js
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Navbar from '@/components/Navbar';
-import RecipeList from '@/components/RecipeList';
+// pages/new.js
+import { useState } from 'react';
+import Navbar from '../components/Navbar';
+import RecipeList from '../components/RecipeList';
+import ReactMarkdown from 'react-markdown';
 
-export default function NewRecipePage() {
+export default function NewPage() {
   const [ingredients, setIngredients] = useState('');
   const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const router = useRouter();
-
-  useEffect(() => {
-    fetch('/api/me')
-      .then((res) => res.ok ? res.json() : Promise.reject())
-      .then(data => setEmail(data.email))
-      .catch(() => router.push('/login'));
-  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setPreview(URL.createObjectURL(file));
-    }
+    if (file) setImage(file);
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setResult(null);
+    if (!ingredients && !image) return;
+
     const formData = new FormData();
-    formData.append('ingredients', ingredients);
+    if (ingredients) formData.append('ingredients', ingredients);
     if (image) formData.append('image', image);
 
-    const res = await fetch('/api/generate-recipe', {
-      method: 'POST',
-      body: formData,
-    });
+    setLoading(true);
+    setResult('');
 
-    const data = await res.json();
-    const cleaned = data?.result
-      ?.replace(/[*_`]/g, '')
-      .replace(/^#+\s/gm, '')
-      .replace(/\n{2,}/g, '\n\n') || 'No recipe found.';
-    setResult(cleaned);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/generate-recipe', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      setResult(data.result);
+    } catch (err) {
+      setResult('Error generating recipe.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
-      <Navbar email={email} />
-      <div className="max-w-5xl mx-auto p-6 flex flex-col lg:flex-row gap-6">
-        <div className="flex-1 space-y-4">
-          <h1 className="text-3xl font-bold text-rose-600">🍳 FridgeAI Recipe Generator</h1>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-white text-gray-800 flex flex-col">
+      <Navbar />
+      <main className="flex-grow flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-xl bg-white shadow-xl rounded-2xl p-8 space-y-8">
+          <h1 className="text-4xl font-extrabold text-center text-rose-600">🍳 Generate Recipe</h1>
+
           <textarea
             value={ingredients}
             onChange={(e) => setIngredients(e.target.value)}
-            placeholder="List your ingredients (e.g. eggs, bread)"
+            placeholder="Enter ingredients (e.g. eggs, tomatoes, pasta)"
             rows={4}
-            className="w-full rounded-md p-4 text-base bg-gray-100 border border-gray-300"
+            className="w-full rounded-lg p-4 bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400 placeholder-gray-500"
           />
-          <label className="block">
-            <span className="text-sm font-medium text-gray-700">Upload or take a picture</span>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleImageChange}
-              className="mt-1 block w-full text-sm file:py-2 file:px-4 file:rounded file:border-0 file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100"
-            />
-          </label>
 
-          {preview && (
-            <img src={preview} alt="Preview" className="max-h-64 rounded border" />
-          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-rose-100 file:text-rose-700 hover:file:bg-rose-200 cursor-pointer"
+          />
 
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2 rounded font-semibold disabled:opacity-50"
+            className="w-full bg-rose-500 hover:bg-rose-600 transition text-white text-lg font-semibold py-3 rounded-full shadow disabled:opacity-50"
           >
-            {loading ? 'Generating...' : 'Generate Recipe'}
+            {loading ? 'Generating...' : '✨ Generate Recipe'}
           </button>
 
           {result && (
-            <div className="mt-6 p-4 bg-white rounded shadow border border-gray-200 whitespace-pre-wrap">
-              <h2 className="text-xl font-semibold text-rose-600 mb-2">📜 Recipe Result:</h2>
-              {result}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow space-y-4">
+              <h2 className="text-2xl font-bold text-rose-600 text-center">Your Recipe</h2>
+              <div className="prose prose-p:my-2 prose-headings:text-rose-700 prose-ul:ml-6 prose-li:marker:text-rose-400 prose-strong:text-rose-600 max-w-none text-gray-800">
+                <ReactMarkdown>{result}</ReactMarkdown>
+              </div>
             </div>
           )}
-        </div>
 
-        <RecipeList />
-      </div>
+          <div className="pt-2">
+            <h2 className="text-xl font-semibold text-rose-600 mb-3">Saved Recipes</h2>
+            <RecipeList />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

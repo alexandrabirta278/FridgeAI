@@ -1,30 +1,28 @@
-import { useEffect, useState } from 'react';
-
-export default function RecipeList() {
-  const [recipes, setRecipes] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/recipes')
-      .then(res => res.json())
-      .then(data => setRecipes(data));
-  }, []);
-
-  const handleDelete = async (id) => {
-    await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
-    setRecipes(recipes.filter(r => r._id !== id));
-  };
+// components/RecipeList.jsx
+export default function RecipeList({ recipes = [], onDelete }) {
+  if (!recipes.length) {
+    return <p className="text-center text-gray-500 mt-4">No recipes saved yet.</p>;
+  }
 
   return (
-    <div className="bg-white border p-4 rounded shadow-sm w-full max-w-sm">
-      <h2 className="font-semibold text-lg mb-2">Saved Recipes</h2>
-      <ul className="space-y-2">
-        {recipes.map(r => (
-          <li key={r._id} className="flex justify-between items-center">
-            <span className="text-sm">{r.ingredients?.slice(0, 20)}...</span>
-            <button onClick={() => handleDelete(r._id)} className="text-red-500 text-xs">Delete</button>
-          </li>
-        ))}
-      </ul>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+      {recipes.map((r) => (
+        <div
+          key={r._id}
+          className="bg-white border border-gray-200 rounded-lg p-4 shadow hover:shadow-lg transition"
+        >
+          <h3 className="text-lg font-semibold text-rose-600 mb-2">{r.title || 'Recipe'}</h3>
+          <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {r.result}
+          </pre>
+          <button
+            onClick={() => onDelete(r._id)}
+            className="mt-4 text-xs text-red-500 hover:underline"
+          >
+            Delete
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
