@@ -1,3 +1,4 @@
+// pages/api/recipes.js
 import { connectToDatabase } from '@/lib/mongodb';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
@@ -11,7 +12,10 @@ export default async function handler(req, res) {
   const recipes = database.collection('recipes');
 
   if (req.method === 'GET') {
-    const list = await recipes.find({ userId: new ObjectId(decoded.userId) }).toArray();
+    const list = await recipes
+      .find({ userId: new ObjectId(decoded.userId) })
+      .sort({ createdAt: -1 })
+      .toArray();
     return res.status(200).json(list);
   }
 
@@ -25,6 +29,17 @@ export default async function handler(req, res) {
       createdAt: new Date(),
     });
     return res.status(201).json(doc);
+  }
+
+  if (req.method === 'DELETE') {
+    const id = req.query.id;
+    if (!id) return res.status(400).json({ message: 'Missing ID' });
+
+    await recipes.deleteOne({
+      _id: new ObjectId(id),
+      userId: new ObjectId(decoded.userId),
+    });
+    return res.status(204).end();
   }
 
   return res.status(405).end();
