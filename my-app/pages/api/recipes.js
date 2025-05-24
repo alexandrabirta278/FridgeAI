@@ -16,11 +16,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { title, content, imageUrl } = req.body;
+    const { title, result, imageUrl } = req.body;
     const doc = await recipes.insertOne({
       userId: new ObjectId(decoded.userId),
       title,
-      content,
+      result,
       imageUrl,
       createdAt: new Date(),
     });

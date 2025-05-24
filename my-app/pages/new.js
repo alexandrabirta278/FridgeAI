@@ -1,5 +1,4 @@
-// pages/new.js
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import RecipeList from '../components/RecipeList';
 import ReactMarkdown from 'react-markdown';
@@ -8,7 +7,21 @@ export default function NewPage() {
   const [ingredients, setIngredients] = useState('');
   const [image, setImage] = useState(null);
   const [result, setResult] = useState('');
+  const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [recipes, setRecipes] = useState([]);
+
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
+  const fetchRecipes = async () => {
+    const res = await fetch('/api/recipes');
+    if (res.ok) {
+      const data = await res.json();
+      setRecipes(data);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -24,6 +37,7 @@ export default function NewPage() {
 
     setLoading(true);
     setResult('');
+    setTitle('');
 
     try {
       const res = await fetch('/api/generate-recipe', {
@@ -32,11 +46,40 @@ export default function NewPage() {
       });
       const data = await res.json();
       setResult(data.result);
+      setTitle(data.title);
     } catch (err) {
       setResult('Error generating recipe.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSave = async () => {
+    if (!result || !title) return;
+
+    const res = await fetch('/api/recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        result,
+        ingredients: [ingredients],
+        imageUrl: '',
+      }),
+    });
+
+    if (res.ok) {
+      setResult('');
+      setTitle('');
+      setIngredients('');
+      setImage(null);
+      await fetchRecipes();
+    }
+  };
+
+  const handleDelete = async (id) => {
+    await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
+    await fetchRecipes();
   };
 
   return (
@@ -71,16 +114,22 @@ export default function NewPage() {
 
           {result && (
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow space-y-4">
-              <h2 className="text-2xl font-bold text-rose-600 text-center">Your Recipe</h2>
-              <div className="prose prose-p:my-2 prose-headings:text-rose-700 prose-ul:ml-6 prose-li:marker:text-rose-400 prose-strong:text-rose-600 max-w-none text-gray-800">
-                <ReactMarkdown>{result}</ReactMarkdown>
+              <h2 className="text-2xl font-bold text-rose-600 text-center">{title || 'Your Recipe'}</h2>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800">
+                {result}
               </div>
+              <button
+                onClick={handleSave}
+                className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                💾 Save Recipe
+              </button>
             </div>
           )}
 
           <div className="pt-2">
             <h2 className="text-xl font-semibold text-rose-600 mb-3">Saved Recipes</h2>
-            <RecipeList />
+            <RecipeList recipes={recipes} onDelete={handleDelete} />
           </div>
         </div>
       </main>

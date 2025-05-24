@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { IncomingForm } from 'formidable';
-import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 
 export const config = {
@@ -17,6 +16,15 @@ cloudinary.config({
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function cleanMarkdown(text) {
+  return text
+    .replace(/^#+\s*/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/```[a-z]*\n?|```/g, '')
+    .trim();
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -31,7 +39,7 @@ export default async function handler(req, res) {
     const imageFile = files.image?.[0] || files.image;
 
     let imageUrl = '';
-    if (imageFile && imageFile.filepath) {
+    if (imageFile?.filepath) {
       try {
         const upload = await cloudinary.uploader.upload(imageFile.filepath, {
           folder: 'fridge-ai',
@@ -46,7 +54,10 @@ export default async function handler(req, res) {
       {
         role: 'user',
         content: [
-          { type: 'text', text: `Here are some ingredients: ${ingredients}. Can you suggest 2 recipes?` },
+          {
+            type: 'text',
+            text: `Here are some ingredients: ${ingredients}. Return a short recipe title on the first line, then a Markdown-formatted recipe below.`,
+          },
           ...(imageUrl ? [{ type: 'image_url', image_url: { url: imageUrl } }] : []),
         ],
       },
@@ -58,8 +69,14 @@ export default async function handler(req, res) {
         messages,
       });
 
-      const result = completion.choices[0]?.message?.content || 'No recipe found.';
-      return res.status(200).json({ result });
+      const full = completion.choices[0]?.message?.content || '';
+      const [titleLine, ...rest] = full.split('\n');
+      const title = titleLine.replace(/^[^a-zA-Z0-9]*/, '').trim();
+      const rawResult = rest.join('\n').trim();
+      const result = cleanMarkdown(rawResult); // ← curățăm aici
+
+
+      return res.status(200).json({ title, result });
     } catch (error) {
       return res.status(500).json({ message: 'OpenAI error', error });
     }
