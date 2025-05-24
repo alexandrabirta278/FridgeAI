@@ -22,7 +22,7 @@ FridgeAI is a web application that helps users generate smart and creative recip
 
 ## Live Demo
 
-[Try FridgeAI here](https://vercel.com/alexandra-birtas-projects/fridge-ai/7FR2tnxG4syhaqcPU6yMYFpSmRdX)
+[Try FridgeAI here]fridge-ai-git-main-alexandra-birtas-projects.vercel.app
 
 ## Setup
 
